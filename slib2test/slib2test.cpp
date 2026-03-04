@@ -2,6 +2,7 @@
 #include <string>
 
 #include <slib.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 int main()
 {
@@ -11,11 +12,17 @@ int main()
 	slib::Rect r = { {100, 100 }, { 200, 200 } };
 	slib::Rect b = { {400, 400 }, { 200, 200 } };
 
-	slib2test.addWindow("test window", 1000, 1000, SDL_WINDOW_RESIZABLE);;
-	slib::Texture txt = { "test.png", 0};
+	slib::Texture txt = { "test.png"};
 	int a = 0;
 
 	slib::Vector2 p = { 10, 10 };
+
+	float size = 200;
+	slib::Text text("font.ttf", size, "hi hello");
+
+	slib::Sound sound;
+	//sound.load("lost.wav");
+	
 
 	while (!slib2test.closeRequested())
 	{
@@ -43,8 +50,29 @@ int main()
 			r.addPos(v);
 			a++;
 		}
+		
+		if (slib2test.scrollu())
+		{
+			text.setc({ 255, 0, 0, 255 });
+			size++;
+			text.setfs(size);
+		}
+		else if (slib2test.scrolld())
+		{
+			text.setc({ 0, 255, 0, 255 });
+			size--;
+			text.setfs(size);
+		}
+	
+		if (slib2test.mouseJustDown(slib::Buttons::left))
+		{
+			sound.play();
+		}
 
-
+		if (slib2test.mouseJustDown(slib::Buttons::right))
+		{
+			sound.pause();
+		}
 		
 		slib2test.clear();
 
@@ -57,7 +85,9 @@ int main()
 		txt.render(r, r);
 		r.intersection(b).renderFill({ 0, 255, 0, 128 });
 
+		text.render(slib2test.mousex() - text.getw() / 2, slib2test.mousey() - text.geth() / 2);
+
 		slib2test.present();
-		SDL_Delay(16);
+		//SDL_Delay(16);
 	}
 }

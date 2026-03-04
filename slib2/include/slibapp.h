@@ -4,6 +4,8 @@
 #include <vector>
 
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 #include "slibpos.h"
 #include "slibmisc.h"
@@ -25,9 +27,14 @@ namespace slib
 	{
 		SDL_Window* window = nullptr;
 		SDL_Renderer* renderer = nullptr;
+        TTF_TextEngine* textEngine = nullptr;
 		std::array<State, SDL_SCANCODE_COUNT> keyStates;
         std::array<State, 5> buttonStates;
         std::pair<Vector2, bool> mouse = { {0, 0}, false };
+        State wheelu;
+        State wheeld;
+        State wheelr;
+        State wheell;
         bool closeRequested = false;
         State hasFocus;
         State hasMouse;
@@ -42,6 +49,14 @@ namespace slib
         void destroyWindow();
 	};
     
+    struct Mixer
+    {
+        MIX_Mixer* mixer = nullptr;
+
+        bool init();
+        void destroyMixer();
+    };
+
     struct TimeManager
     {
         long double counterFrequency = 0;
@@ -381,16 +396,40 @@ namespace slib
         bool mouseUp(Buttons button, int windowIndex) const;
         bool mouseJustUp(Buttons button, int windowIndex) const;
 
+        bool scrollu() const;
+        bool scrolld() const;
+        bool scrolll() const;
+        bool scrollr() const;
+
+        bool scrollJustu() const;
+        bool scrollJustd() const;
+        bool scrollJustl() const;
+        bool scrollJustr() const;
+
+        bool scrollu(int windowIndex) const;
+        bool scrolld(int windowIndex) const;
+        bool scrolll(int windowIndex) const;
+        bool scrollr(int windowIndex) const;
+
+        bool scrollJustu(int windowIndex) const;
+        bool scrollJustd(int windowIndex) const;
+        bool scrollJustl(int windowIndex) const;
+        bool scrollJustr(int windowIndex) const;
+
         void setTicks(int ticks);
         bool ticking();
         long double getdt();
 
-	private:
+
+	public:
 		static Window mainWindow;
 		static std::vector<Window> secondaryWindows;
         static TimeManager time;
+        static Mixer mixer;
 
         friend class Rect;
         friend class Texture;
+        friend class Text;
+        friend class Sound;
 	};
 }

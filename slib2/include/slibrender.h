@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 #include "slibmisc.h"
 #include "slibpos.h"
@@ -37,6 +38,7 @@ namespace slib
 		Texture(const char* filename, int windowIndex);
 		Texture(Color color);
 		Texture(Color color, int windowIndex);
+		~Texture();
 		
 		bool load(const char* filename);
 		bool createAsTarget(int w, int h);
@@ -63,4 +65,30 @@ namespace slib
 		Rect currentFrame;
 	};
 
+	class Text
+	{
+	public:
+		Text();
+		Text(const char* filename, float size, const char* string);
+		Text(const char* filename, float size, const char* string, int windowIndex);
+
+		void render(float x, float y) const;
+
+		int getw() const;
+		int geth() const;
+
+		float getfs() const;
+		void setfs(float size);
+
+		void setstr(const char* str);
+
+		Color getc() const;
+		void setc(Color color);
+
+	private:
+		TTF_Text *text = nullptr;
+	
+		bool create(const char* filename, float size, const char* string);
+		bool create(const char* filename, float size, const char* string, int windowIndex);
+	};
 }

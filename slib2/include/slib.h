@@ -6,3 +6,4 @@
 #include "slibpos.h"
 #include "slibmisc.h"
 #include "slibrender.h"
+#include "slibaudio.h"

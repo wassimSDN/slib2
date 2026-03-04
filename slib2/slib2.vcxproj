@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\slibapp.cpp" />
+    <ClCompile Include="src\slibaudio.cpp" />
     <ClCompile Include="src\slibmisc.cpp" />
     <ClCompile Include="src\slibpos.cpp" />
     <ClCompile Include="src\slibrender.cpp" />
@@ -27,6 +28,7 @@
   <ItemGroup>
     <ClInclude Include="include\slib.h" />
     <ClInclude Include="include\slibapp.h" />
+    <ClInclude Include="include\slibaudio.h" />
     <ClInclude Include="include\slibmisc.h" />
     <ClInclude Include="include\slibpos.h" />
     <ClInclude Include="include\slibrender.h" />
@@ -133,7 +135,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL3.lib;SDL3_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL3.lib;SDL3_image.lib;SDL3_ttf.lib;SDL3_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(ProjectDir)third party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -157,7 +159,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>SDL3.lib;SDL3_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL3.lib;SDL3_image.lib;SDL3_ttf.lib;SDL3_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(ProjectDir)third party\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

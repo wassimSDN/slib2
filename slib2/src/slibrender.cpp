@@ -34,9 +34,7 @@ namespace slib
 	Surface::~Surface()
 	{
 		if (!surface)
-			return;
-
-		SDL_DestroySurface(surface);
+			SDL_DestroySurface(surface);
 	}
 
 	bool Surface::load(const char* filename)
@@ -53,6 +51,9 @@ namespace slib
 
 	void Surface::createFromImage(const char* filename)
 	{
+		if (surface)
+			SDL_DestroySurface(surface);
+
 		surface = IMG_Load(filename);
 		if (surface)
 			return;
@@ -134,8 +135,17 @@ namespace slib
 		texture = SDL_CreateTextureFromSurface(App::secondaryWindows[windowIndex].renderer, surface.get());
 	}
 
+	Texture::~Texture()
+	{
+		if (texture)
+			SDL_DestroyTexture(texture);
+	}
+
 	bool Texture::createFromImage(const char* filename)
 	{
+		if (texture)
+			SDL_DestroyTexture(texture);
+
 		Surface surface = filename;
 		texture = SDL_CreateTextureFromSurface(App::mainWindow.renderer, surface.get());
 
@@ -146,6 +156,9 @@ namespace slib
 	{
 		if (windowIndex < 0 || windowIndex >= App::secondaryWindows.size())
 			return false;
+
+		if (texture)
+			SDL_DestroyTexture(texture);
 
 		Surface surface = filename;
 		texture = SDL_CreateTextureFromSurface(App::secondaryWindows[windowIndex].renderer, surface.get());
@@ -165,6 +178,9 @@ namespace slib
 
 	bool Texture::createAsTarget(int w, int h)
 	{
+		if (texture)
+			SDL_DestroyTexture(texture);
+
 		texture = SDL_CreateTexture(App::mainWindow.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
 		if (texture)
 			return true;
@@ -213,5 +229,141 @@ namespace slib
 		SDL_FRect srcrect = { src.getx(), src.gety(), src.getw(), src.geth() };
 
 		SDL_RenderTextureRotated(SDL_GetRendererFromTexture(texture), texture, &srcrect, &dstrect, angle, nullptr, SDL_FLIP_NONE);
+	}
+
+
+	Text::Text(const char* filename, float size, const char* string)
+	{
+		create(filename, size, string);
+	}
+	
+	Text::Text(const char* filename, float size, const char* string, int windowIndex)
+	{
+		create(filename, size, string, windowIndex);
+	}
+
+	void Text::render(float x, float y) const
+	{
+		
+#if _DEBUG
+		if (!TTF_DrawRendererText(text, x, y))
+		{
+			std::cout << SDL_GetError() << '\n';
+		}
+#else
+		TTF_DrawRendererText(text, x, y);
+#endif
+	}
+
+	int Text::getw() const
+	{
+		int w;
+		TTF_GetTextSize(text, &w, nullptr);
+
+		return w;
+	}
+
+	int Text::geth() const
+	{
+		int h;
+		TTF_GetTextSize(text, nullptr, &h);
+
+		return h;
+	}
+
+	float Text::getfs() const
+	{
+		if (!text)
+			return -1;
+
+		return TTF_GetFontSize(TTF_GetTextFont(text));
+	}
+
+	void Text::setfs(float size)
+	{
+		if (!text)
+			return;
+
+		TTF_SetFontSize(TTF_GetTextFont(text), size);
+	}
+
+	void Text::setstr(const char* str)
+	{
+		TTF_SetTextString(text, str, std::strlen(str));
+	}
+
+	Color Text::getc() const
+	{	
+		Color color;
+		if (!TTF_GetTextColor(text, &color.r, &color.g, &color.b, &color.a))
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return { 0, 0, 0, 0 };
+		}
+
+		return color;
+	}
+
+	void Text::setc(Color color)
+	{
+#if _DEBUG
+		if (!TTF_SetTextColor(text, color.r, color.g, color.b, color.a))
+		{
+			std::cout << SDL_GetError() << '\n';
+		}
+#else
+		TTF_SetTextColor(text, color.r, color.g, color.b, color.a);
+#endif
+	}
+
+	bool Text::create(const char *filename, float size, const char *string)
+	{
+		TTF_Font* font = TTF_OpenFont(filename, size);	
+		if (!font)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return false;
+		}
+
+		text = TTF_CreateText(App::mainWindow.textEngine, font, string, std::strlen(string));
+		if (!text)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return false;
+		}
+
+		return true;
+	}
+
+	bool Text::create(const char* filename, float size, const char* string, int windowIndex)
+	{
+		if (windowIndex < 0 || windowIndex >= App::secondaryWindows.size())
+			return false;
+
+		TTF_Font* font = TTF_OpenFont(filename, size);
+		if (!font)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return false;
+		}
+
+		text = TTF_CreateText(App::secondaryWindows[windowIndex].textEngine, font, string, std::strlen(string));
+		if (!text)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return false;
+		}
+
+		return true;
 	}
 }
