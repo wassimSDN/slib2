@@ -402,11 +402,30 @@ namespace slib
 	}
 	AnimatedTexture::AnimatedTexture(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex)
 	{
-		create(filename, nbrFrames, fps, x, y, w, h, windowIndex, padding);
+		create(filename, nbrFrames, fps, x, y, w, h, padding, windowIndex);
+	}
+
+	bool AnimatedTexture::finishedPlaying()
+	{
+		return currentFrame.getx() == currentFrame.getw() * (nbrFrames - 1) + startX + padding * (nbrFrames - 1);
+	}
+
+	void AnimatedTexture::playOnce()
+	{
+		once = true;
+		currentFrame.setPos({ startX, startY });
+	}
+
+	void AnimatedTexture::playRepeat()
+	{
+		once = false;
 	}
 
 	void AnimatedTexture::update()
 	{
+		if (once && finishedPlaying())
+			return;
+
 		accumulatedTime += App::time.deltaTime;
 
 		while (accumulatedTime >= frameTime)
@@ -419,6 +438,8 @@ namespace slib
 		}
 	}
 
+
+
 	void AnimatedTexture::render(Rect dstrect)
 	{
 		texture.render(dstrect, currentFrame);
@@ -430,7 +451,7 @@ namespace slib
 	}
 	bool AnimatedTexture::load(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex)
 	{
-		return create(filename, nbrFrames, fps, x, y, w, h, windowIndex, padding);
+		return create(filename, nbrFrames, fps, x, y, w, h, padding, windowIndex);
 	}
 
 	bool AnimatedTexture::create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
@@ -463,32 +484,92 @@ namespace slib
 
 	void AnimatedTexture::setup(int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
 	{
-		if (fps > 0)
-			frameTime = 1.0f / fps;
+		setfps(fps);
+		setNbrFrames(nbrFrames);
+		setsx(x);
+		setsy(y);
+		setfw(w);
+		setfh(h);
+		setp(padding);
+	}
 
 
-		if (nbrFrames > 0)
-			this->nbrFrames = nbrFrames;
-
+	void AnimatedTexture::setsx(float x)
+	{
 		if (x >= 0 && x < texture.getw())
+		{
 			startX = x;
-
+			currentFrame.setPos({ startX, currentFrame.gety() });
+		}
+#if _DEBUG
+		else
+			std::cout << "Start X out of range\n";
+#endif
+	}
+	void AnimatedTexture::setsy(float y)
+	{
 		if (y >= 0 && y < texture.geth())
+		{
 			startY = y;
-
-		currentFrame.setPos({ startX, startY});
-
+			currentFrame.setPos({ currentFrame.getx(), startY });
+		}
+#if _DEBUG
+		else
+			std::cout << "Start Y out of range\n";
+#endif
+	}
+	void AnimatedTexture::setfw(float w)
+	{
 		if (w > 0 && w < texture.getw())
 			currentFrame.setSize({ w, currentFrame.geth() });
-		else
-			currentFrame.setSize({ static_cast<float>(missingSize), currentFrame.geth() });
 
+		else
+		{
+			currentFrame.setSize({ static_cast<float>(missingSize), currentFrame.geth() });
+#if _DEBUG
+			std::cout << "Frame W out of range\n";
+#endif
+		}
+
+	}
+	void AnimatedTexture::setfh(float h)
+	{
 		if (h > 0 && h < texture.geth())
 			currentFrame.setSize({ currentFrame.getw(), h });
 		else
+		{
 			currentFrame.setSize({ currentFrame.getw(), static_cast<float>(missingSize) });
+#if _DEBUG
+			std::cout << "Frame H out of range\n";
+#endif
+		}
+	}
+	void AnimatedTexture::setfps(float fps)
+	{
+		if (fps > 0)
+			frameTime = 1.0f / fps;
+#if _DEBUG
+		else
+			std::cout << "FPS must be Greater Than 0\n";
+#endif
+	}
+	void AnimatedTexture::setNbrFrames(int nbrFrames)
+	{
+		if (nbrFrames > 0)
+			this->nbrFrames = nbrFrames;
+#if _DEBUG
+		else
+			std::cout << "NBRFRAMES must be Greater Than 0\n";
+#endif
+	}
 
+	void AnimatedTexture::setp(float padding)
+	{
 		if (padding >= 0)
 			this->padding = padding;
+#if _DEBUG
+		else
+			std::cout << "NBRFRAMES must be Positive\n";
+#endif
 	}
 }

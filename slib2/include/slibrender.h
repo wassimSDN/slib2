@@ -77,8 +77,11 @@ namespace slib
 		void setfh(float h);
 		void setfps(float fps);
 		void setNbrFrames(int nbrFrames);
+		void setp(float padding);
 
 		bool finishedPlaying();
+		void playOnce();
+		void playRepeat();
 
 		void update();
 		void render(Rect dstrect);
@@ -92,6 +95,7 @@ namespace slib
 		float startX = 0;
 		float startY = 0;
 		float padding = 0;
+		bool once = false;
 
 		bool create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
 		bool create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex);
