@@ -12,6 +12,8 @@ int main()
 	slib::Rect r = { {100, 100 }, { 200, 200 } };
 	slib::Rect b = { {400, 400 }, { 200, 200 } };
 
+	
+
 	slib::Texture txt = { "test.png"};
 	int a = 0;
 
@@ -22,7 +24,10 @@ int main()
 
 	slib::Sound sound;
 	//sound.load("lost.wav");
+
+	slib::AnimatedTexture sprite("sprite.png", 4, 4, 2, 175, 102, 145, 2);
 	
+	slib::Rect c = { {250, 250}, {500, 500} };
 
 	while (!slib2test.closeRequested())
 	{
@@ -50,7 +55,9 @@ int main()
 			r.addPos(v);
 			a++;
 		}
-		
+
+		sprite.update();
+
 		if (slib2test.scrollu())
 		{
 			text.setc({ 255, 0, 0, 255 });
@@ -86,6 +93,8 @@ int main()
 		r.intersection(b).renderFill({ 0, 255, 0, 128 });
 
 		text.render(slib2test.mousex() - text.getw() / 2, slib2test.mousey() - text.geth() / 2);
+
+		sprite.render(c);
 
 		slib2test.present();
 		//SDL_Delay(16);

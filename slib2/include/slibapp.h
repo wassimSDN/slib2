@@ -429,6 +429,7 @@ namespace slib
 
         friend class Rect;
         friend class Texture;
+        friend class AnimatedTexture;
         friend class Text;
         friend class Sound;
 	};

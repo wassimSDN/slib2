@@ -22,13 +22,12 @@ namespace slib
 		{
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
-#endif
+#endif		
 			return false;
 		}
 #if _DEBUG		
 		if (!SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND))
 		{
-
 			std::cout << SDL_GetError() << '\n';
 		}
 
@@ -115,7 +114,6 @@ namespace slib
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
-
 			return false;
 		}
 

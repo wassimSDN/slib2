@@ -71,9 +71,11 @@ namespace slib
 		return missing;
 	}
 
+	static int missingSize = 50;
+
 	SDL_Surface *missingSurface()
 	{
-		SDL_Surface* result = SDL_CreateSurface(50, 50, SDL_PIXELFORMAT_RGBA8888);
+		SDL_Surface* result = SDL_CreateSurface(missingSize, missingSize, SDL_PIXELFORMAT_RGBA8888);
 		if (!result)
 		{
 #if _DEBUG
@@ -230,6 +232,33 @@ namespace slib
 
 		SDL_RenderTextureRotated(SDL_GetRendererFromTexture(texture), texture, &srcrect, &dstrect, angle, nullptr, SDL_FLIP_NONE);
 	}
+	float Texture::getw() const
+	{
+		float w;
+		if (!SDL_GetTextureSize(texture, &w, nullptr))
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return -1.0f;
+		}
+
+		return w;
+
+	}
+	float Texture::geth() const
+	{
+		float h;
+		if (!SDL_GetTextureSize(texture, nullptr, &h))
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return -1.0f;
+		}
+
+		return h;
+	}
 
 
 	Text::Text(const char* filename, float size, const char* string)
@@ -365,5 +394,101 @@ namespace slib
 		}
 
 		return true;
+	}
+
+	AnimatedTexture::AnimatedTexture(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
+	{
+		create(filename, nbrFrames, fps, x, y, w, h, padding);
+	}
+	AnimatedTexture::AnimatedTexture(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex)
+	{
+		create(filename, nbrFrames, fps, x, y, w, h, windowIndex, padding);
+	}
+
+	void AnimatedTexture::update()
+	{
+		accumulatedTime += App::time.deltaTime;
+
+		while (accumulatedTime >= frameTime)
+		{
+			currentFrame.addPos({ currentFrame.getw() + padding, 0 });
+			if (currentFrame.getx() >= currentFrame.getw() * nbrFrames + startX + padding * (nbrFrames - 1))
+				currentFrame.setPos({startX, currentFrame.gety()});
+
+			accumulatedTime -= frameTime;
+		}
+	}
+
+	void AnimatedTexture::render(Rect dstrect)
+	{
+		texture.render(dstrect, currentFrame);
+	}
+
+	bool AnimatedTexture::load(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
+	{
+		return create(filename, nbrFrames, fps, x, y, w, h, padding);
+	}
+	bool AnimatedTexture::load(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex)
+	{
+		return create(filename, nbrFrames, fps, x, y, w, h, windowIndex, padding);
+	}
+
+	bool AnimatedTexture::create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
+	{
+		if (!texture.load(filename))
+		{
+			//fix
+
+			return false;
+		}
+		
+		setup(nbrFrames, fps, x, y, w, h, padding);
+
+		return true;
+	}
+
+	bool AnimatedTexture::create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int WindowIndex)
+	{
+		if (!texture.load(filename, WindowIndex))
+		{
+			//fix
+
+			return false;
+		}
+
+		setup(nbrFrames, fps, x, y, w, h, padding);
+
+		return true;
+	}
+
+	void AnimatedTexture::setup(int nbrFrames, float fps, float x, float y, float w, float  h, float padding)
+	{
+		if (fps > 0)
+			frameTime = 1.0f / fps;
+
+
+		if (nbrFrames > 0)
+			this->nbrFrames = nbrFrames;
+
+		if (x >= 0 && x < texture.getw())
+			startX = x;
+
+		if (y >= 0 && y < texture.geth())
+			startY = y;
+
+		currentFrame.setPos({ startX, startY});
+
+		if (w > 0 && w < texture.getw())
+			currentFrame.setSize({ w, currentFrame.geth() });
+		else
+			currentFrame.setSize({ static_cast<float>(missingSize), currentFrame.geth() });
+
+		if (h > 0 && h < texture.geth())
+			currentFrame.setSize({ currentFrame.getw(), h });
+		else
+			currentFrame.setSize({ currentFrame.getw(), static_cast<float>(missingSize) });
+
+		if (padding >= 0)
+			this->padding = padding;
 	}
 }

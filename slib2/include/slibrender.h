@@ -52,6 +52,9 @@ namespace slib
 		void render(float angle, Rect dst) const;
 		void render(float angle, Rect dst, Rect src) const;
 
+		float geth() const;
+		float getw() const;
+
 	private:
 		SDL_Texture* texture = nullptr;
 		bool createFromImage(const char* filename);
@@ -60,9 +63,39 @@ namespace slib
 
 	class AnimatedTexture
 	{
+	public:
+		AnimatedTexture();
+		AnimatedTexture(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
+		AnimatedTexture(const char* fileName, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex);
+
+		bool load(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
+		bool load(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex);
+
+		void setsx(float x);
+		void setsy(float y);
+		void setfw(float w);
+		void setfh(float h);
+		void setfps(float fps);
+		void setNbrFrames(int nbrFrames);
+
+		bool finishedPlaying();
+
+		void update();
+		void render(Rect dstrect);
+
 	private:
-		SDL_Texture* texture = nullptr;
+		Texture texture;
 		Rect currentFrame;
+		float frameTime;
+		long double accumulatedTime = 0.0f;
+		int nbrFrames = 0;
+		float startX = 0;
+		float startY = 0;
+		float padding = 0;
+
+		bool create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
+		bool create(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex);
+		void setup(int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
 	};
 
 	class Text
