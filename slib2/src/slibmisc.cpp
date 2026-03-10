@@ -33,7 +33,7 @@ namespace slib
 			std::cout << GetLastError() << '\n';
 			return;
 		}
-#elif define(__linux__)
+#elif defined(__linux__)
 
 #endif
 
@@ -43,7 +43,7 @@ namespace slib
 	{
 #if defined(_WIN32)
 		FindCloseChangeNotification(m_handle);
-#elif define(__linux__)
+#elif defined(__linux__)
 	   
 #endif
 
@@ -55,7 +55,7 @@ namespace slib
 		return m_handle != INVALID_HANDLE_VALUE &&
 			WaitForSingleObject(m_handle, 0) == WAIT_OBJECT_0 &&
 			FindNextChangeNotification(m_handle) == TRUE;
-#elif define(__linux__)
+#elif defined(__linux__)
 
 #endif
 	}
