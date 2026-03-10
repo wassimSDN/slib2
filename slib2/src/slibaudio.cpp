@@ -7,36 +7,6 @@
 
 namespace slib
 {
-
-	Sound::Sound()
-	{
-		audio = MIX_CreateSineWaveAudio(App::mixer.mixer, 440, 0.5f, 10);
-		if (!audio)
-		{
-#if _DEBUG
-			std::cout << SDL_GetError() << '\n';
-#endif
-			return;
-		}
-
-		track = MIX_CreateTrack(App::mixer.mixer);
-
-		if (!track)
-		{
-#if _DEBUG
-			std::cout << SDL_GetError() << '\n';
-#endif
-			return;
-		}
-
-		if (!MIX_SetTrackAudio(track, audio))
-		{
-#if _DEBUG
-			std::cout << SDL_GetError() << '\n';
-#endif
-			return;
-		}
-	}
 	Sound::Sound(const char* filename)
 	{
 		create(filename);
@@ -111,6 +81,15 @@ namespace slib
 #endif
 	}
 	
+	void Sound::tag(const char *tag)
+	{
+#if _DEBUG
+		if (!MIX_TagTrack(track, tag))
+			std::cout << SDL_GetError() << '\n';
+#else
+		MIX_TagTrack(track, tag);
+#endif
+	}
 	bool Sound::load(const char* filename)
 	{
 		return create(filename);
@@ -130,6 +109,7 @@ namespace slib
 		audio = MIX_LoadAudio(App::mixer.mixer, filename, true);
 		if (!audio)
 		{
+
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
@@ -140,6 +120,7 @@ namespace slib
 
 		if (!track)
 		{
+			MIX_DestroyAudio(audio);
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
@@ -148,6 +129,8 @@ namespace slib
 
 		if (!MIX_SetTrackAudio(track, audio))
 		{
+			MIX_DestroyAudio(audio);
+			MIX_DestroyTrack(track);
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
@@ -177,6 +160,7 @@ namespace slib
 
 		if (!track)
 		{
+			MIX_DestroyAudio(audio);
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
@@ -186,6 +170,8 @@ namespace slib
 
 		if (!MIX_SetTrackAudio(track, audio))
 		{
+			MIX_DestroyAudio(audio);
+			MIX_DestroyTrack(track);
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
@@ -202,5 +188,28 @@ namespace slib
 		}
 
 		return true;
+	}
+
+	void Sound::setTagGain(const char* tag, float gain)
+	{
+#if _DEBUG
+		if (!MIX_SetTagGain(App::mixer.mixer, tag, gain))
+			std::cout << SDL_GetError() << '\n';
+#else
+		MIX_SetTagGain(App::mixer.mixer, tag, gain);
+#endif
+	}
+
+	float Sound::getTagGain(const char* tag)
+	{
+		int count = 0;
+		MIX_Track **track = MIX_GetTaggedTracks(App::mixer.mixer, tag, &count);
+		if(count > 0)
+		{
+			SDL_free(track);
+			return MIX_GetTrackGain(track[0]);
+		}
+		
+		return -1.0f;
 	}
 }

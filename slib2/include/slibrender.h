@@ -33,7 +33,7 @@ namespace slib
 	class Texture
 	{
 	public:
-		Texture();
+		Texture() = default;
 		Texture(const char* filename);
 		Texture(const char* filename, int windowIndex);
 		Texture(Color color);
@@ -46,11 +46,13 @@ namespace slib
 		bool load(const char* filename, int windowIndex);
 		bool createAsTarget(int w, int h, int windowIndex);
 
-		void render(Rect dst) const;
-		void render(Rect dst, Rect src) const;
+		void destroy();
 
-		void render(float angle, Rect dst) const;
-		void render(float angle, Rect dst, Rect src) const;
+		void render(Rect &dst);
+		void render(Rect &dst, Rect src);
+
+		void render(float angle, Rect &dst);
+		void render(float angle, Rect &dst, Rect src);
 
 		float geth() const;
 		float getw() const;
@@ -64,7 +66,7 @@ namespace slib
 	class AnimatedTexture
 	{
 	public:
-		AnimatedTexture();
+		AnimatedTexture() = default;
 		AnimatedTexture(const char* filename, int nbrFrames, float fps, float x, float y, float w, float  h, float padding);
 		AnimatedTexture(const char* fileName, int nbrFrames, float fps, float x, float y, float w, float  h, float padding, int windowIndex);
 
@@ -78,13 +80,14 @@ namespace slib
 		void setfps(float fps);
 		void setNbrFrames(int nbrFrames);
 		void setp(float padding);
+		void reset();
 
 		bool finishedPlaying();
 		void playOnce();
 		void playRepeat();
 
 		void update();
-		void render(Rect dstrect);
+		void render(Rect &dstrect);
 
 	private:
 		Texture texture;
@@ -105,9 +108,15 @@ namespace slib
 	class Text
 	{
 	public:
-		Text();
+		Text() = default;
 		Text(const char* filename, float size, const char* string);
 		Text(const char* filename, float size, const char* string, int windowIndex);
+		~Text();
+
+		bool load(const char* filename, float size, const char* string);
+		bool load(const char* filename, float size, const char* string, int windowIndex);
+		bool createAsDebug();
+		void destroy();
 
 		void render(float x, float y) const;
 
@@ -128,4 +137,6 @@ namespace slib
 		bool create(const char* filename, float size, const char* string);
 		bool create(const char* filename, float size, const char* string, int windowIndex);
 	};
+
+	void renderPoint(Vector2 point, Color color = { 255, 0, 0, 255 });
 }

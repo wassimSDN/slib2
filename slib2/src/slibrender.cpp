@@ -1,5 +1,6 @@
 #if _DEBUG
 #include <iostream>
+#include <assert.h>
 #endif
 
 #include "../include/slibrender.h"
@@ -33,8 +34,10 @@ namespace slib
 
 	Surface::~Surface()
 	{
-		if (!surface)
+		if (surface)
 			SDL_DestroySurface(surface);
+
+		surface = nullptr;
 	}
 
 	bool Surface::load(const char* filename)
@@ -104,14 +107,6 @@ namespace slib
 		return result;
 	}
 
-	Texture::Texture()
-	{
-		texture = SDL_CreateTextureFromSurface(App::mainWindow.renderer, missingSurface());
-#if _DEBUG
-		std::cout << SDL_GetError() << '\n';
-#endif
-	}
-
 	Texture::Texture(const char* filename)
 	{
 		createFromImage(filename);
@@ -150,6 +145,15 @@ namespace slib
 
 		Surface surface = filename;
 		texture = SDL_CreateTextureFromSurface(App::mainWindow.renderer, surface.get());
+#if _DEBUG
+		if (!texture)
+			std::cout << SDL_GetError() << '\n';
+#endif
+
+		SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
+
+		if (surface.isMissing())
+			SDL_SetRenderTextureAddressMode(SDL_GetRendererFromTexture(texture), SDL_TEXTURE_ADDRESS_WRAP, SDL_TEXTURE_ADDRESS_WRAP);
 
 		return !surface.isMissing();
 	}
@@ -164,6 +168,10 @@ namespace slib
 
 		Surface surface = filename;
 		texture = SDL_CreateTextureFromSurface(App::secondaryWindows[windowIndex].renderer, surface.get());
+		SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
+
+		if (surface.isMissing())
+			SDL_SetRenderTextureAddressMode(SDL_GetRendererFromTexture(texture), SDL_TEXTURE_ADDRESS_WRAP, SDL_TEXTURE_ADDRESS_WRAP);
 
 		return !surface.isMissing();
 	}
@@ -186,8 +194,11 @@ namespace slib
 		texture = SDL_CreateTexture(App::mainWindow.renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
 		if (texture)
 			return true;
+		SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
 
-		SDL_CreateTextureFromSurface(App::mainWindow.renderer, missingSurface());
+#if _DEBUG
+		std::cout << SDL_GetError() << '\n';
+#endif
 
 		return false;
 	}
@@ -201,36 +212,99 @@ namespace slib
 		if (texture)
 			return true;
 
-		SDL_CreateTextureFromSurface(App::mainWindow.renderer, missingSurface());
-
+#if _DEBUG
+		std::cout << SDL_GetError() << '\n';
+#endif
 		return false;
 	}
 
-	void Texture::render(Rect dst) const
+	void Texture::destroy()
+	{
+		if (texture)
+			SDL_DestroyTexture(texture);
+		
+		texture = nullptr;
+	}
+
+	void Texture::render(Rect &dst)
 	{
 		SDL_FRect dstrect = { dst.getx(), dst.gety(), dst.getw(), dst.geth() };
 
+#if _DEBUG
+		SDL_Renderer* rend = SDL_GetRendererFromTexture(texture);
+		if(!rend)
+		{
+			std::cout << SDL_GetError() << '\n';
+			return;
+		}
+		if (App::renderTextures)
+			if (!SDL_RenderTexture(rend, texture, nullptr, &dstrect))
+				std::cout << SDL_GetError() << '\n';
+		dst.renderDebug();
+#else
 		SDL_RenderTexture(SDL_GetRendererFromTexture(texture), texture, nullptr, &dstrect);
+#endif
 	}
-	void Texture::render(Rect dst, Rect src) const
+	void Texture::render(Rect &dst, Rect src)
 	{
 		SDL_FRect dstrect = { dst.getx(), dst.gety(), dst.getw(), dst.geth() };
 		SDL_FRect srcrect = { src.getx(), src.gety(), src.getw(), src.geth() };
 
+#if _DEBUG
+		SDL_Renderer* rend = SDL_GetRendererFromTexture(texture);
+		if (!rend)
+		{
+			std::cout << SDL_GetError() << '\n';
+			return;
+		}
+		if (App::renderTextures)
+			if (!SDL_RenderTexture(rend, texture, &srcrect, &dstrect))
+				std::cout << SDL_GetError() << '\n';
+
+		dst.renderDebug();
+#else
 		SDL_RenderTexture(SDL_GetRendererFromTexture(texture), texture, &srcrect, &dstrect);
+#endif
 	}
-	void Texture::render(float angle, Rect dst) const
+	void Texture::render(float angle, Rect &dst)
 	{
 		SDL_FRect dstrect = { dst.getx(), dst.gety(), dst.getw(), dst.geth() };
+#if _DEBUG
+		SDL_Renderer* rend = SDL_GetRendererFromTexture(texture);
+		if (!rend)
+		{
+			std::cout << SDL_GetError() << '\n';
+			return;
+		}
+		if (App::renderTextures)
+			if(!SDL_RenderTextureRotated(rend, texture, nullptr, &dstrect, angle, nullptr, SDL_FLIP_NONE))
+				std::cout << SDL_GetError() << '\n';
 
+		dst.renderDebug();
+#else
 		SDL_RenderTextureRotated(SDL_GetRendererFromTexture(texture), texture, nullptr, &dstrect, angle, nullptr, SDL_FLIP_NONE);
+#endif
 	}
-	void Texture::render(float angle, Rect dst, Rect src) const
+	void Texture::render(float angle, Rect &dst, Rect src)
 	{
 		SDL_FRect dstrect = { dst.getx(), dst.gety(), dst.getw(), dst.geth() };
 		SDL_FRect srcrect = { src.getx(), src.gety(), src.getw(), src.geth() };
 
+#if _DEBUG
+		SDL_Renderer* rend = SDL_GetRendererFromTexture(texture);
+		if (!rend)
+		{
+			std::cout << SDL_GetError() << '\n';
+			return;
+		}
+		if (App::renderTextures)
+			if (!SDL_RenderTextureRotated(rend, texture, &srcrect, &dstrect, angle, nullptr, SDL_FLIP_NONE))
+				std::cout << SDL_GetError() << '\n';
+
+		dst.renderDebug();
+#else
 		SDL_RenderTextureRotated(SDL_GetRendererFromTexture(texture), texture, &srcrect, &dstrect, angle, nullptr, SDL_FLIP_NONE);
+#endif
 	}
 	float Texture::getw() const
 	{
@@ -271,13 +345,81 @@ namespace slib
 		create(filename, size, string, windowIndex);
 	}
 
+	Text::~Text()
+	{
+		destroy();
+	}
+
+	bool Text::load(const char* filename, float size, const char* string)
+	{
+		return create(filename, size, string);
+	}
+	bool Text::load(const char* filename, float size, const char* string, int windowIndex)
+	{
+		return create(filename, size, string, windowIndex);
+	}
+	bool Text::createAsDebug()
+	{
+		if (text)
+			destroy();
+		
+		TTF_Font* font = missingFont(20);
+		if (!font)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			return false;
+		}
+
+
+		char debug[] = "Debug";
+		text = TTF_CreateText(App::mainWindow.textEngine, font, debug, std::strlen(debug));
+		if (!text)
+		{
+#if _DEBUG
+			std::cout << SDL_GetError() << '\n';
+#endif
+			TTF_CloseFont(font);
+			return false;
+		}
+
+		return true;
+	}
+
+	void Text::destroy()
+	{
+		if (text)
+		{
+			TTF_CloseFont(TTF_GetTextFont(text));
+			TTF_DestroyText(text);
+		}
+
+		text = nullptr;
+	}
+
 	void Text::render(float x, float y) const
 	{
 		
 #if _DEBUG
-		if (!TTF_DrawRendererText(text, x, y))
+		if(App::renderTextures)
 		{
-			std::cout << SDL_GetError() << '\n';
+			if (!TTF_DrawRendererText(text, x, y))
+			{
+				std::cout << SDL_GetError() << '\n';
+				return;
+			}
+		}
+		if (App::renderHitBoxes)
+		{
+			int  w, h;
+			if (!TTF_GetTextSize(text, &w, &h))
+			{
+				std::cout << SDL_GetError() << '\n';
+				return;
+			}
+			Rect hitbox = { {x, y}, {static_cast<float>(w), static_cast<float>(h)} };
+			hitbox.renderDebug();
 		}
 #else
 		TTF_DrawRendererText(text, x, y);
@@ -349,13 +491,24 @@ namespace slib
 
 	bool Text::create(const char *filename, float size, const char *string)
 	{
+		if (text)
+			destroy();
+		
 		TTF_Font* font = TTF_OpenFont(filename, size);	
 		if (!font)
 		{
+		
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
-			return false;
+			font = missingFont(size);
+#if _DEBUG
+			if (!font)
+			{
+				std::cout << SDL_GetError() << '\n';
+				return false;
+			}
+#endif
 		}
 
 		text = TTF_CreateText(App::mainWindow.textEngine, font, string, std::strlen(string));
@@ -364,6 +517,7 @@ namespace slib
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
+			TTF_CloseFont(font);
 			return false;
 		}
 
@@ -381,7 +535,14 @@ namespace slib
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
-			return false;
+			font = missingFont(size);
+#if _DEBUG
+			if (!font)
+			{
+				std::cout << SDL_GetError() << '\n';
+				return false;
+			}
+#endif
 		}
 
 		text = TTF_CreateText(App::secondaryWindows[windowIndex].textEngine, font, string, std::strlen(string));
@@ -390,6 +551,7 @@ namespace slib
 #if _DEBUG
 			std::cout << SDL_GetError() << '\n';
 #endif
+			TTF_CloseFont(font);
 			return false;
 		}
 
@@ -413,7 +575,7 @@ namespace slib
 	void AnimatedTexture::playOnce()
 	{
 		once = true;
-		currentFrame.setPos({ startX, startY });
+		//currentFrame.setPos({ startX, startY });
 	}
 
 	void AnimatedTexture::playRepeat()
@@ -438,9 +600,7 @@ namespace slib
 		}
 	}
 
-
-
-	void AnimatedTexture::render(Rect dstrect)
+	void AnimatedTexture::render(Rect &dstrect)
 	{
 		texture.render(dstrect, currentFrame);
 	}
@@ -491,6 +651,7 @@ namespace slib
 		setfw(w);
 		setfh(h);
 		setp(padding);
+		currentFrame.setPos({ startX, startY });
 	}
 
 
@@ -499,7 +660,6 @@ namespace slib
 		if (x >= 0 && x < texture.getw())
 		{
 			startX = x;
-			currentFrame.setPos({ startX, currentFrame.gety() });
 		}
 #if _DEBUG
 		else
@@ -511,7 +671,6 @@ namespace slib
 		if (y >= 0 && y < texture.geth())
 		{
 			startY = y;
-			currentFrame.setPos({ currentFrame.getx(), startY });
 		}
 #if _DEBUG
 		else
@@ -569,7 +728,28 @@ namespace slib
 			this->padding = padding;
 #if _DEBUG
 		else
-			std::cout << "NBRFRAMES must be Positive\n";
+			std::cout << "Padding must be Positive\n";
 #endif
+	}
+
+	void AnimatedTexture::reset()
+	{
+		currentFrame.setPos({ startX, currentFrame.gety() });
+		currentFrame.setPos({ currentFrame.getx(), startY });
+	}
+
+	void renderPoint(Vector2 point, Color color)
+	{
+		Color previousColor = App::mainWindow.getRenderColor();
+		App::mainWindow.setRenderColor(color);
+
+#if _DEBUG
+		if (!SDL_RenderPoint(App::mainWindow.renderer, point.x, point.y))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_RenderPoint(App::mainWindow.renderer, point.x, point.y);
+#endif
+
+		App::mainWindow.setRenderColor(previousColor);
 	}
 }

@@ -8,10 +8,13 @@ namespace slib
 	class Sound
 	{
 	public:
-		Sound();
+		Sound() = default;
 		Sound(const char* filename);
 		Sound(const char* filename, const char* tag);
 		~Sound();
+
+		static void setTagGain(const char* tag, float gain);
+		static float getTagGain(const char* tag);
 
 		void play();
 		void play(int loop);
@@ -19,6 +22,8 @@ namespace slib
 
 		void pause();
 		void resume();
+
+		void tag(const char* tag);
 
 		bool load(const char* filename);
 		bool load(const char* filename, const char* tag);

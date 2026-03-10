@@ -10,6 +10,8 @@ namespace slib
 	{
 		float x = 0;
 		float y = 0;
+
+		Vector2 normalise();
 	};
 
 	struct Dimensions
@@ -29,6 +31,7 @@ namespace slib
 	{
 	public:
 		Rect() = default;
+
 		Rect(Vector2 p, Dimensions s);
 		Rect(const Rect& other);
 		~Rect() = default;
@@ -40,6 +43,10 @@ namespace slib
 		bool collision(const Rect& other) const;
 		bool collision(const Circle& other) const;
 		Rect intersection(const Rect& other) const;
+		bool pointIn(Vector2 point) const;
+		bool mouseIn() const;
+		bool clicked() const;
+		
 
 		Rect get() const;
 		Vector2 getPos() const;
@@ -59,7 +66,9 @@ namespace slib
 
 		void render(Color color = {255, 0, 0, 255}) const;
 		void render(int windowIndex, Color color = { 255, 0, 0, 255 }) const;
-
+#if _DEBUG
+		void renderDebug();
+#endif
 		void renderFill(Color color = { 255, 0, 0, 255 }) const;
 		void renderFill(int windowIndex, Color color = { 255, 0, 0, 255 }) const;
 
@@ -67,6 +76,14 @@ namespace slib
 	private:
 		Vector2 pos;
 		Dimensions size;
+#if _DEBUG
+		bool held = false;
+		bool editable = true;
+		int index = -1;
+		static int nbr;
+		static bool otherHeld;
+		static int hoveredIndex;
+#endif
 	};
 
 	class Circle

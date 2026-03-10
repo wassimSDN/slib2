@@ -1,5 +1,6 @@
 #if _DEBUG
 #include <iostream>
+#include <string>
 #endif
 
 #include <SDL3_ttf/SDL_ttf.h>
@@ -7,6 +8,7 @@
 
 #include "../include/slibapp.h"
 #include "../include/slibmisc.h"
+#include "../include/slibrender.h"
 
 namespace slib
 {
@@ -124,6 +126,9 @@ namespace slib
 	{
 		if(mixer)
 			MIX_DestroyMixer(mixer);
+
+		mixer = nullptr;
+		MIX_Quit();
 	}
 
 	void TimeManager::update()
@@ -210,6 +215,9 @@ namespace slib
 		time.timeStep = 1.0f / 20;
 		time.accumulatedTime = 0;
 		time.lastTime = static_cast<long double>(SDL_GetPerformanceCounter()) / time.counterFrequency;
+#if _DEBUG
+		debugText.createAsDebug();
+#endif
 	}
 
 	void App::updateEvents()
@@ -225,6 +233,7 @@ namespace slib
 		mainWindow.wheeld.current = false;
 		mainWindow.wheelr.current = false;
 		mainWindow.wheell.current = false;
+		mainWindow.closeRequested = false;
 		for (State& it : mainWindow.keyStates)
 		{
 			it.previous = it.current;
@@ -247,6 +256,7 @@ namespace slib
 			it.wheeld.current = false;
 			it.wheell.current = false;
 			it.wheelr.current = false;
+			it.closeRequested = false;
 			for (State& it2 : it.keyStates)
 			{
 				it2.previous = it2.current;
@@ -472,6 +482,17 @@ namespace slib
 				break;
 			}	
 		}	
+
+#if _DEBUG
+		if (keyDown(Keys::lshift) && keyJustDown(Keys::q))
+			renderHitBoxes = !renderHitBoxes;
+
+		if (keyDown(Keys::lshift) && keyJustDown(Keys::e))
+			editorMode = !editorMode;
+
+		if (keyDown(Keys::lshift) && keyJustDown(Keys::r))
+			renderTextures = !renderTextures;
+#endif
 	}
 
 	bool App::running() const { return !mainWindow.closeRequested; }
@@ -493,13 +514,35 @@ namespace slib
 		secondaryWindows.pop_back();
 	}
 
-	Color App::getRenderColor() const { return mainWindow.getRenderColor(); }
+	void App::setTitle(const char *title)
+	{
+#if _DEBUG
+		if (!SDL_SetWindowTitle(mainWindow.window, title))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowTitle(mainWindow.window, title);
+#endif
+	}
+	void App::setTitle(const char* title, int windowIndex)
+	{
+		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
+			return;
+
+#if _DEBUG
+		if (!SDL_SetWindowTitle(mainWindow.window, title))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowTitle(mainWindow.window, title);
+#endif
+	}
+
+	Color App::getRenderColor() { return mainWindow.getRenderColor(); }
 	void App::setRenderColor(Color color)
 	{
 		mainWindow.setRenderColor(color);
 	}
 
-	Color App::getRenderColor(int windowIndex) const
+	Color App::getRenderColor(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return { 0, 0, 0, 0 };
@@ -544,6 +587,27 @@ namespace slib
 
 	void App::present()
 	{
+#if _DEBUG
+		if (renderHitBoxes)
+		{
+			float size = 20.0f;
+			Rect mouseRect = { {mousex() - size / 2, mousey() - size / 2}, {size, size} };
+			mouseRect.render({0, 0, 255, 255});
+		}
+		
+		bool prev = renderTextures;
+		if (!renderTextures)
+			renderTextures = true;
+		
+		debugString += "X: " + std::to_string(mousex()) + " ";
+		debugString += "Y: " + std::to_string(mousey()) + "\n";
+		
+		debugText.setstr(debugString.c_str());
+		debugText.render(10.0f, 10.0f);
+		debugString.clear();
+
+		renderTextures = prev;
+#endif
 		mainWindow.present();
 
 		for(Window& it : secondaryWindows)
@@ -552,19 +616,71 @@ namespace slib
 		}
 	}
 
-	Window App::getWindow() const { return mainWindow; }
+	Window* App::getWindow() { return &mainWindow; }
 
-	bool App::hasFocus() const { return mainWindow.hasFocus.nowTrue(); }
-	bool App::justHasFocus() const { return mainWindow.hasFocus.nowJustTrue(); }
+	Window* App::getWindow(int windowIndex)
+	{
+		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
+			return nullptr;
 
-	bool App::hasFocus(int windowIndex) const
+		return &secondaryWindows[windowIndex];
+	}
+
+	void App::setFullscreen()
+	{
+#if _DEBUG
+		if (!SDL_SetWindowFullscreen(mainWindow.window, true))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowFullscreen(mainWindow.window, true);
+#endif
+	}
+	void App::setFullscreen(int windowIndex)
+	{
+		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
+			return;
+
+#if _DEBUG
+		if (!SDL_SetWindowFullscreen(secondaryWindows[windowIndex].window, true))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowFullscreen(secondaryWindows[windowIndex].window, true);
+#endif
+	}
+
+	void App::setWindowed()
+	{
+#if _DEBUG
+		if (!SDL_SetWindowFullscreen(mainWindow.window, false))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowFullscreen(mainWindow.window, false);
+#endif
+	}
+	void App::setWindowed(int windowIndex)
+	{
+		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
+			return;
+
+#if _DEBUG
+		if (!SDL_SetWindowFullscreen(secondaryWindows[windowIndex].window, false))
+			std::cout << SDL_GetError() << '\n';
+#else
+		SDL_SetWindowFullscreen(secondaryWindows[windowIndex].window, false);
+#endif
+	}
+
+	bool App::hasFocus()  { return mainWindow.hasFocus.nowTrue(); }
+	bool App::justHasFocus()  { return mainWindow.hasFocus.nowJustTrue(); }
+
+	bool App::hasFocus(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].hasFocus.nowTrue();;
 	}
-	bool App::justHasFocus(int windowIndex) const
+	bool App::justHasFocus(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -572,9 +688,9 @@ namespace slib
 		return secondaryWindows[windowIndex].hasFocus.nowJustTrue();;
 	}
 
-	bool App::closeRequested() const { return mainWindow.closeRequested; }
+	bool App::closeRequested()  { return mainWindow.closeRequested; }
 	
-	bool App::closeRequested(int windowIndex) const
+	bool App::closeRequested(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -582,7 +698,7 @@ namespace slib
 		return secondaryWindows[windowIndex].closeRequested;
 	}
 
-	bool App::oneCloseRequested() const
+	bool App::oneCloseRequested() 
 	{
 		if (mainWindow.closeRequested)
 			return true;
@@ -596,33 +712,33 @@ namespace slib
 		return false;
 	}
 
-	bool App::keyDown(Keys key) const { return mainWindow.keyStates[(int)key].nowTrue(); }
-	bool App::keyJustDown(Keys key) const { return	mainWindow.keyStates[(int)key].nowJustTrue(); }
-	bool App::keyUp(Keys key) const { return mainWindow.keyStates[(int)key].nowFalse(); }
-	bool App::keyJustUp(Keys key) const { return mainWindow.keyStates[(int)key].nowJustFalse(); }
+	bool App::keyDown(Keys key)  { return mainWindow.keyStates[(int)key].nowTrue(); }
+	bool App::keyJustDown(Keys key)  { return	mainWindow.keyStates[(int)key].nowJustTrue(); }
+	bool App::keyUp(Keys key)  { return mainWindow.keyStates[(int)key].nowFalse(); }
+	bool App::keyJustUp(Keys key)  { return mainWindow.keyStates[(int)key].nowJustFalse(); }
 
-	bool App::keyDown(Keys key, int windowIndex) const 
+	bool App::keyDown(Keys key, int windowIndex)  
 	{ 
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].keyStates[(int)key].nowTrue(); 
 	}
-	bool App::keyJustDown(Keys key, int windowIndex) const
+	bool App::keyJustDown(Keys key, int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return	secondaryWindows[windowIndex].keyStates[(int)key].nowJustTrue();
 	}
-	bool App::keyUp(Keys key, int windowIndex) const 
+	bool App::keyUp(Keys key, int windowIndex)  
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false; 
 	
 		return secondaryWindows[windowIndex].keyStates[(int)key].nowFalse();
 	}
-	bool App::keyJustUp(Keys key, int windowIndex) const
+	bool App::keyJustUp(Keys key, int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -630,33 +746,33 @@ namespace slib
 		return secondaryWindows[windowIndex].keyStates[(int)key].nowJustFalse();
 	}
 
-	bool App::mouseDown(Buttons button) const { return	mainWindow.buttonStates[(int)button].nowTrue(); }
-	bool App::mouseJustDown(Buttons button) const { return	mainWindow.buttonStates[(int)button].nowJustTrue(); }
-	bool App::mouseUp(Buttons button) const { return mainWindow.buttonStates[(int)button].current; }
-	bool App::mouseJustUp(Buttons button) const { return	mainWindow.buttonStates[(int)button].nowJustFalse(); }
+	bool App::mouseDown(Buttons button)  { return	mainWindow.buttonStates[(int)button].nowTrue(); }
+	bool App::mouseJustDown(Buttons button)  { return	mainWindow.buttonStates[(int)button].nowJustTrue(); }
+	bool App::mouseUp(Buttons button)  { return mainWindow.buttonStates[(int)button].current; }
+	bool App::mouseJustUp(Buttons button)  { return	mainWindow.buttonStates[(int)button].nowJustFalse(); }
 
-	bool App::mouseDown(Buttons button, int windowIndex) const 
+	bool App::mouseDown(Buttons button, int windowIndex)  
 	{ 
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].buttonStates[(int)button].nowTrue();
 	}
-	bool App::mouseJustDown(Buttons button, int windowIndex) const
+	bool App::mouseJustDown(Buttons button, int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size() || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].buttonStates[(int)button].nowJustTrue();
 	}
-	bool App::mouseUp(Buttons button, int windowIndex) const 
+	bool App::mouseUp(Buttons button, int windowIndex)  
 	{ 
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].buttonStates[(int)button].nowFalse();
 	}
-	bool App::mouseJustUp(Buttons button, int windowIndex) const
+	bool App::mouseJustUp(Buttons button, int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -664,64 +780,64 @@ namespace slib
 		return 	secondaryWindows[windowIndex].buttonStates[(int)button].nowJustFalse();
 	}
 
-	bool App::scrollu() const
+	bool App::scrollu() 
 	{
 		return mainWindow.wheelu.nowTrue();
 	}
-	bool App::scrolld() const
+	bool App::scrolld() 
 	{
 		return mainWindow.wheeld.nowTrue();
 	}
-	bool App::scrolll() const
+	bool App::scrolll() 
 	{
 		return mainWindow.wheell.nowTrue();
 	}
-	bool App::scrollr() const
+	bool App::scrollr() 
 	{
 		return mainWindow.wheelr.nowTrue();
 	}
 
-	bool App::scrollJustu() const
+	bool App::scrollJustu() 
 	{
 		return mainWindow.wheelu.nowJustTrue();
 	}
-	bool App::scrollJustd() const
+	bool App::scrollJustd() 
 	{
 		return mainWindow.wheeld.nowJustTrue();
 	}
-	bool App::scrollJustl() const
+	bool App::scrollJustl() 
 	{
 		return mainWindow.wheell.nowJustTrue();
 	}
-	bool App::scrollJustr() const
+	bool App::scrollJustr() 
 	{
 		return mainWindow.wheelr.nowJustTrue();
 	}
 
 
 		 
-	bool App::scrollu(int windowIndex) const
+	bool App::scrollu(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 		
 		return secondaryWindows[windowIndex].wheelu.nowTrue();
 	}
-	bool App::scrolld(int windowIndex) const
+	bool App::scrolld(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].wheeld.nowTrue();
 	}
-	bool App::scrolll(int windowIndex) const
+	bool App::scrolll(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 		
 		return secondaryWindows[windowIndex].wheell.nowTrue();
 	}
-	bool App::scrollr(int windowIndex) const
+	bool App::scrollr(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -729,28 +845,28 @@ namespace slib
 		return secondaryWindows[windowIndex].wheelr.nowTrue();
 	}
 
-	bool App::scrollJustu(int windowIndex) const
+	bool App::scrollJustu(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].wheelu.nowJustTrue();
 	}
-	bool App::scrollJustd(int windowIndex) const
+	bool App::scrollJustd(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].wheeld.nowJustTrue();
 	}
-	bool App::scrollJustl(int windowIndex) const
+	bool App::scrollJustl(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
 
 		return secondaryWindows[windowIndex].wheell.nowJustTrue();
 	}
-	bool App::scrollJustr(int windowIndex) const
+	bool App::scrollJustr(int windowIndex) 
 	{
 		if (windowIndex < 0 || windowIndex >= secondaryWindows.size())
 			return false;
@@ -779,4 +895,11 @@ namespace slib
 	std::vector<Window> App::secondaryWindows;
 	TimeManager App::time;
 	Mixer App::mixer;
+#if _DEBUG
+	bool App::renderHitBoxes = true;
+	bool App::editorMode = false;
+	bool App::renderTextures = true;
+	Text App::debugText;
+	std::string App::debugString;
+#endif
 }

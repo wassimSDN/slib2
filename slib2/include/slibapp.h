@@ -2,6 +2,9 @@
 
 #include <array>
 #include <vector>
+#if _DEBUG
+#include <string>
+#endif
 
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -335,6 +338,7 @@ namespace slib
         forward = SDL_BUTTON_X2,
     };
      
+    class Text;
 	class App
 	{
 	public:
@@ -347,81 +351,97 @@ namespace slib
         bool running() const;
         void clear();
         void present();
-
-        Window getWindow() const;
         
-
-        bool addWindow(const char* title, int width, int height, int flags);
-        void popWindow();
-
-        Color getRenderColor() const;
-        void setRenderColor(Color color = {0, 0, 0, 0});
-
-        Color getRenderColor(int windowIndex) const;
-        void setRenderColor(int windowIndex, Color color = { 0, 0, 0, 0 });
-
-        float mousex();
-        float mousey();
-
-        float mousex(int windowIndex);
-        float mousey(int windowIndex);
-
-        bool hasFocus() const;
-        bool justHasFocus() const;
-
-        bool hasFocus(int windowIndex) const;
-        bool justHasFocus(int windowIndex) const;
-
-        bool closeRequested() const;
-        bool closeRequested(int windowIndex) const;
-        bool oneCloseRequested() const;
-
-		bool keyDown(Keys key) const;
-        bool keyJustDown(Keys key) const;
-        bool keyUp(Keys key) const;
-        bool keyJustUp(Keys key) const;
-
-        bool keyDown(Keys key, int windowIndex) const;
-        bool keyJustDown(Keys key, int windowIndex) const;
-        bool keyUp(Keys key, int windowIndex) const;
-        bool keyJustUp(Keys key, int windowIndex) const;
-
-        bool mouseDown(Buttons button) const;
-        bool mouseJustDown(Buttons button) const;
-        bool mouseUp(Buttons button) const;
-        bool mouseJustUp(Buttons button) const;
+        static Window *getWindow();
+        static Window *getWindow(int windowIndex);
         
-        bool mouseDown(Buttons button, int windowIndex) const;
-        bool mouseJustDown(Buttons button, int windowIndex) const;
-        bool mouseUp(Buttons button, int windowIndex) const;
-        bool mouseJustUp(Buttons button, int windowIndex) const;
+        static bool addWindow(const char* title, int width, int height, int flags);
+        static void popWindow();
+  
+        static void setTitle(const char* title);
+        static void setTitle(const char* title, int windowIndex);
 
-        bool scrollu() const;
-        bool scrolld() const;
-        bool scrolll() const;
-        bool scrollr() const;
+        static void setFullscreen();
+        static void setFullscreen(int windowIndex);
 
-        bool scrollJustu() const;
-        bool scrollJustd() const;
-        bool scrollJustl() const;
-        bool scrollJustr() const;
+        static void setWindowed();
+        static void setWindowed(int windowIndex);
 
-        bool scrollu(int windowIndex) const;
-        bool scrolld(int windowIndex) const;
-        bool scrolll(int windowIndex) const;
-        bool scrollr(int windowIndex) const;
+        static Color getRenderColor();
+        static void setRenderColor(Color color = {0, 0, 0, 0});
+     
+        static Color getRenderColor(int windowIndex);
+        static void setRenderColor(int windowIndex, Color color = { 0, 0, 0, 0 });
+         
+        static float mousex();
+        static float mousey();
+       
+        static float mousex(int windowIndex);
+        static float mousey(int windowIndex);
+       
+        static bool hasFocus();
+        static bool justHasFocus();
+        
+        static bool hasFocus(int windowIndex);
+        static bool justHasFocus(int windowIndex);
+        
+        static bool closeRequested();
+        static bool closeRequested(int windowIndex);
+        static bool oneCloseRequested();
+       
+		static bool keyDown(Keys key);
+        static bool keyJustDown(Keys key);
+        static bool keyUp(Keys key);
+        static bool keyJustUp(Keys key);
+         
+        static bool keyDown(Keys key, int windowIndex);
+        static bool keyJustDown(Keys key, int windowIndex);
+        static bool keyUp(Keys key, int windowIndex);
+        static bool keyJustUp(Keys key, int windowIndex);
+        
+        static bool mouseDown(Buttons button);
+        static bool mouseJustDown(Buttons button);
+        static bool mouseUp(Buttons button);
+        static bool mouseJustUp(Buttons button);
+        
+        static bool mouseDown(Buttons button, int windowIndex);
+        static bool mouseJustDown(Buttons button, int windowIndex);
+        static bool mouseUp(Buttons button, int windowIndex);
+        static bool mouseJustUp(Buttons button, int windowIndex);
+        
+        static bool scrollu();
+        static bool scrolld();
+        static bool scrolll();
+        static bool scrollr();
+         
+        static bool scrollJustu();
+        static bool scrollJustd();
+        static bool scrollJustl();
+        static bool scrollJustr();
+      
+        static bool scrollu(int windowIndex);
+        static bool scrolld(int windowIndex);
+        static bool scrolll(int windowIndex);
+        static bool scrollr(int windowIndex);
+       
+        static bool scrollJustu(int windowIndex);
+        static bool scrollJustd(int windowIndex);
+        static bool scrollJustl(int windowIndex);
+        static bool scrollJustr(int windowIndex);
 
-        bool scrollJustu(int windowIndex) const;
-        bool scrollJustd(int windowIndex) const;
-        bool scrollJustl(int windowIndex) const;
-        bool scrollJustr(int windowIndex) const;
+        static void setTicks(int ticks);
+        static bool ticking();
+        static long double getdt();
 
-        void setTicks(int ticks);
-        bool ticking();
-        long double getdt();
+#if _DEBUG
+        static bool renderHitBoxes;
+        static bool editorMode;
+        static bool renderTextures;
+        static Text debugText;
+        static std::string debugString;
+#endif
 
-
-	public:
+	private:
 		static Window mainWindow;
 		static std::vector<Window> secondaryWindows;
         static TimeManager time;
@@ -432,5 +452,7 @@ namespace slib
         friend class AnimatedTexture;
         friend class Text;
         friend class Sound;
+
+        friend void renderPoint(Vector2 point, Color color);
 	};
 }
